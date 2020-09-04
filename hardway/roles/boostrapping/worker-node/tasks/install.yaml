@@ -1,0 +1,19 @@
+---
+- name: Download and Install Binaries for control plane
+  get_url:
+    url: "{{ item }}"
+    dest: "{{ KUBERNETES_BINARY_PATH }}"
+    mode: '0700'
+  with_items:   
+    - https://storage.googleapis.com/kubernetes-release/release/{{ KUBERNETES_VERSION }}/bin/linux/amd64/kubectl 
+    - https://storage.googleapis.com/kubernetes-release/release/{{ KUBERNETES_VERSION }}/bin/linux/amd64/kube-proxy 
+    - https://storage.googleapis.com/kubernetes-release/release/{{ KUBERNETES_VERSION }}/bin/linux/amd64/kubelet    
+
+- name: Download and Install Binaries for control plane - cni
+  unarchive:
+    src: "{{ item }}"
+    dest: "/opt/cni/bin/" 
+    remote_src: yes    
+    mode: '0700'
+  with_items:   
+    - https://github.com/containernetworking/plugins/releases/download/{{ CNI_VER }}/cni-plugins-linux-amd64-{{ CNI_VER }}.tgz 

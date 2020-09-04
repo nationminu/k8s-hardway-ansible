@@ -1,0 +1,40 @@
+---
+# The Admin Certificate  
+- name: Generate a certificate and private key for each Kubernetes worker node (1/2)
+  template:
+    src: "node-csr.json.j2"
+    dest: "{{ KUBERNETES_DIRECTORY }}/pki/clients/{{ item }}-csr.json"  
+  with_items:
+    - "{{ groups['kube-node'] }}"  
+
+## json pretty format : cat ~/pki/xx.json | python -m json.tool
+- name: Generate a certificate and private key for each Kubernetes worker node (2/2)
+  copy:
+    dest: "{{ KUBERNETES_DIRECTORY }}/gencert-{{ item }}.sh"
+    content: |
+      #/usr/bin/env bash
+
+      {{ KUBERNETES_BINARY_PATH }}/cfssl gencert \
+      -ca={{ KUBERNETES_DIRECTORY }}/pki/ca/ca.pem \
+      -ca-key={{ KUBERNETES_DIRECTORY }}/pki/ca/ca-key.pem \
+      -config={{ KUBERNETES_DIRECTORY }}/pki/config/ca-config.json \
+      -hostname={{ item }},{{ item }}.{{ KUBERNETES_FQDN }},{{ hostvars[item].ansible_host }} \
+      -profile=kubernetes \
+      {{ KUBERNETES_DIRECTORY }}/pki/clients/{{ item }}-csr.json \
+      | /usr/local/bin/cfssljson -bare {{ KUBERNETES_DIRECTORY }}/pki/clients/{{ item }}
+    mode: 0700
+  with_items:
+    - "{{ groups['kube-node'] }}"
+
+- name: Certificate Authority
+  shell: "{{ KUBERNETES_DIRECTORY }}/gencert-{{ item }}.sh"
+  register: "node_result"
+  with_items:
+    - "{{ groups['kube-node'] }}"
+
+- debug:
+    msg: 
+      - "node result :  {{ item.results }} " 
+    verbosity: 2
+  with_items:
+    - "{{ node_result }}"

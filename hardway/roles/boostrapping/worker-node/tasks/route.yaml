@@ -1,0 +1,17 @@
+---
+- name: configure routes to PodCidr environment (1/1)
+  copy:
+    dest: "{{ KUBERNETES_DIRECTORY }}/generating-router.sh"
+    content: |
+      #/usr/bin/env bash
+
+      {% for host in groups['kube-node'] %}
+      {% if inventory_hostname != host %}
+      ip route add {{ POD_CIDR_PREFIX }}.{{ loop.index }}.0/24 via {{ hostvars[host].ansible_host }}
+      {% endif %}
+      {% endfor %}
+    mode: "0700"
+ 
+- name: configure routes to PodCidr environment (2/2)
+  shell: "{{ KUBERNETES_DIRECTORY }}/generating-router.sh"
+  register: route_result 

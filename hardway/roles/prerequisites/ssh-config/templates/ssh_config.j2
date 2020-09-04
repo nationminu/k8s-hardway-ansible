@@ -1,0 +1,16 @@
+## ssh config for k8s cluster
+
+{% for host in groups['all'] | sort %}
+## {{ loop.index }} {{ hostvars[host]['inventory_hostname'] }}
+Host {{ hostvars[host]['inventory_hostname'] }} {{ hostvars[host]['inventory_hostname'] }}.{{ KUBERNETES_FQDN }}
+  HostName {{ hostvars[host]['ansible_host'] }}
+  User {{ ansible_user }}
+  {% if ansible_user == 'root' %}
+  IdentityFile /{{ ansible_user }}/.ssh/id_rsa
+  {% else %}
+  IdentityFile /home/{{ ansible_user }}/.ssh/id_rsa
+  {% endif %}
+  StrictHostKeyChecking no
+  UserKnownHostsFile=/dev/null
+{% endfor %}
+

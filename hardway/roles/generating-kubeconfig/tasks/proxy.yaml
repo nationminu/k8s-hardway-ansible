@@ -1,0 +1,37 @@
+---
+# 1. The kubelet Kubernetes Configuration File
+- name: Generate a kubeconfig file for the kube-proxy service (1/2)
+#  shell: >
+  copy:
+    dest: "{{ KUBERNETES_DIRECTORY }}/genconfig-proxy.sh"
+    content: |
+      #/usr/bin/env bash
+
+      {{ KUBERNETES_BINARY_PATH }}/kubectl config set-cluster {{ KUBERNETS_CLUSTER_NAME }} \
+      --certificate-authority={{ KUBERNETES_DIRECTORY }}/pki/ca/ca.pem \
+      --embed-certs=true \
+      --server=https://{{ KUBERNETES_PUBLIC_ADDRESS }}:6443 \
+      --kubeconfig={{ KUBERNETES_DIRECTORY }}/kubeconfig/kube-proxy.kubeconfig \
+        
+      {{ KUBERNETES_BINARY_PATH }}/kubectl config set-credentials system:kube-proxy \
+      --client-certificate={{ KUBERNETES_DIRECTORY }}/pki/proxy/kube-proxy.pem \
+      --client-key={{ KUBERNETES_DIRECTORY }}/pki/proxy/kube-proxy-key.pem \
+      --embed-certs=true \
+      --kubeconfig={{ KUBERNETES_DIRECTORY }}/kubeconfig/kube-proxy.kubeconfig
+        
+      {{ KUBERNETES_BINARY_PATH }}/kubectl config set-context default \
+      --cluster={{ KUBERNETS_CLUSTER_NAME }} \
+      --user=system:kube-proxy \
+      --kubeconfig={{ KUBERNETES_DIRECTORY }}/kubeconfig/kube-proxy.kubeconfig \
+        
+      {{ KUBERNETES_BINARY_PATH }}/kubectl config use-context default --kubeconfig={{ KUBERNETES_DIRECTORY }}/kubeconfig/kube-proxy.kubeconfig 
+    mode: 0700 
+
+- name: Generate a kubeconfig file for the kube-proxy service (2/2)
+  shell: "{{ KUBERNETES_DIRECTORY }}/genconfig-proxy.sh"
+  register: "proxy_result" 
+
+- debug:
+    msg: 
+      - "proxy result :  {{ proxy_result }} " 
+    verbosity: 2 

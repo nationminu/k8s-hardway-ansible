@@ -1,0 +1,22 @@
+---
+# tasks file for generating-kubeconfig
+
+- import_tasks: node.yaml  
+  tags:
+    - node
+
+- import_tasks: proxy.yaml  
+  tags:
+    - proxy
+
+- import_tasks: controller.yaml  
+  tags:
+    - controller
+
+- import_tasks: scheduler.yaml  
+  tags:
+    - scheduler
+
+- import_tasks: admin.yaml  
+  tags:
+    - admin

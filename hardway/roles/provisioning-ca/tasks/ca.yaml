@@ -1,0 +1,25 @@
+---
+# Generate the CA configuration file, certificate, and private key: 
+- name: Generate the CA certificate and private key (1/2)
+  template:
+    src: "ca-csr.json.j2"
+    dest: "{{ KUBERNETES_DIRECTORY }}/pki/config/ca-csr.json"    
+
+## json pretty format : cat ~/pki/xx.json | python -m json.tool
+- name: Generate the CA certificate and private key (2/2) 
+  copy:
+    dest: "{{ KUBERNETES_DIRECTORY }}/gencert-ca.sh"
+    content: |
+      #/usr/bin/env bash
+      {{ KUBERNETES_BINARY_PATH }}/cfssl gencert -initca {{ KUBERNETES_DIRECTORY }}/pki/config/ca-csr.json \
+      | {{ KUBERNETES_BINARY_PATH }}/cfssljson -bare {{ KUBERNETES_DIRECTORY }}/pki/ca/ca
+    mode: 0700
+
+- name: Certificate Authority
+  shell: "{{ KUBERNETES_DIRECTORY }}/gencert-ca.sh"
+  register: ca_result 
+
+- debug:
+    msg: 
+      - "ca result : {{ ca_result }}" 
+    verbosity: 2 

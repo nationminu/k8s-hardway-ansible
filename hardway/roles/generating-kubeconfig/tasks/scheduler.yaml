@@ -1,0 +1,37 @@
+---
+# 1. The kubelet Kubernetes Configuration File
+- name: Generate a kubeconfig file for the kube-scheduler service (1/2)
+#  shell: >
+  copy:
+    dest: "{{ KUBERNETES_DIRECTORY }}/genconfig-scheduler.sh"
+    content: |
+      #/usr/bin/env bash
+
+      {{ KUBERNETES_BINARY_PATH }}/kubectl config set-cluster {{ KUBERNETS_CLUSTER_NAME }} \
+      --certificate-authority={{ KUBERNETES_DIRECTORY }}/pki/ca/ca.pem \
+      --embed-certs=true \
+      --server=https://{{ KUBERNETES_PUBLIC_ADDRESS }}:6443 \
+      --kubeconfig={{ KUBERNETES_DIRECTORY }}/kubeconfig/kube-scheduler.kubeconfig \
+        
+      {{ KUBERNETES_BINARY_PATH }}/kubectl config set-credentials system:kube-scheduler \
+      --client-certificate={{ KUBERNETES_DIRECTORY }}/pki/scheduler/kube-scheduler.pem \
+      --client-key={{ KUBERNETES_DIRECTORY }}/pki/scheduler/kube-scheduler-key.pem \
+      --embed-certs=true \
+      --kubeconfig={{ KUBERNETES_DIRECTORY }}/kubeconfig/kube-scheduler.kubeconfig
+        
+      {{ KUBERNETES_BINARY_PATH }}/kubectl config set-context default \
+      --cluster={{ KUBERNETS_CLUSTER_NAME }} \
+      --user=system:kube-scheduler \
+      --kubeconfig={{ KUBERNETES_DIRECTORY }}/kubeconfig/kube-scheduler.kubeconfig \
+        
+      {{ KUBERNETES_BINARY_PATH }}/kubectl config use-context default --kubeconfig={{ KUBERNETES_DIRECTORY }}/kubeconfig/kube-scheduler.kubeconfig 
+    mode: 0700 
+
+- name: Generate a kubeconfig file for the kube-scheduler service (2/2)
+  shell: "{{ KUBERNETES_DIRECTORY }}/genconfig-scheduler.sh"
+  register: "scheduler_result" 
+
+- debug:
+    msg: 
+      - "scheduler result :  {{ scheduler_result }} " 
+    verbosity: 2 

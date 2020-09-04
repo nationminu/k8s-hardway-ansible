@@ -1,0 +1,7 @@
+---
+# defaults file for worker-node
+crio_cgroup_manager: "{{ kubelet_cgroup_driver | default('cgroupfs') }}"
+
+crio_seccomp_profile: ""
+crio_runc_path: "/usr/bin/runc"
+crio_conmon: "/usr/bin/conmon"

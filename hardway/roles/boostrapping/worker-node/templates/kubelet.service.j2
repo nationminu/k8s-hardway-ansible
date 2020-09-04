@@ -1,0 +1,32 @@
+[Unit]
+Description=Kubernetes Kubelet
+Documentation=https://github.com/kubernetes/kubernetes
+{% KUBERNETES_RUNTIME != "crio" %}
+After=containerd.service
+Requires=containerd.service
+{% endif %}
+
+[Service]
+ExecStart=/usr/local/bin/kubelet \
+  --config=/var/lib/kubelet/kubelet-config.yaml \
+{% if KUBERNETES_RUNTIME == "containerd" %}
+  --container-runtime=remote \
+  --container-runtime-endpoint=unix:///var/run/containerd/containerd.sock \
+{% elif KUBERNETES_RUNTIME == "docker" %}
+  --container-runtime=remote \ 
+{% elif KUBERNETES_RUNTIME == "crio" %}
+  --container-runtime=remote \
+  --container-runtime-endpoint=unix:///var/run/crio/crio.sock \
+  --runtime-cgroups=/systemd/system.slice \
+  --kubelet-cgroups=/systemd/system.slice \
+{% endif %}
+  --image-pull-progress-deadline=10m \
+  --kubeconfig=/var/lib/kubelet/kubeconfig \
+  --network-plugin=cni \
+  --register-node=true \
+  --v=2
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,42 @@
+---
+# tasks file for boostrapping/worker-node
+
+- name: Configure the Worker Server 
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0700'
+  with_items: 
+    - /etc/cni/net.d
+    - /opt/cni/bin
+    - /var/lib/kubelet
+    - /var/lib/kube-proxy
+    - /var/lib/kubernetes
+    - /var/run/kubernetes   
+    - /etc/containerd 
+    - /tmp/containerd
+  tags:
+    - always
+    
+- import_tasks: install.yaml  
+  tags:
+    - install
+
+- import_tasks: docker.yaml
+  tags:
+    - runtime
+  when: "KUBERNETES_RUNTIME == 'docker'"
+
+- import_tasks: containerd.yaml
+  tags:
+    - runtime
+  when: "KUBERNETES_RUNTIME == 'containerd'"
+
+- import_tasks: crio.yaml
+  tags:
+    - runtime
+  when: "KUBERNETES_RUNTIME == 'crio'" 
+
+- import_tasks: service.yaml  
+  tags:
+    - service 

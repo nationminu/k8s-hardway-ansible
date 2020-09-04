@@ -1,0 +1,33 @@
+---
+- hosts: 'kube-master' 
+  gather_facts: False
+  any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
+  tasks:
+
+    - name: Generator Token for kubernetes cluster
+      shell: |
+        kubeadm token list -o jsonpath="{.token}"
+      register: join_token 
+
+    - set_fact:
+        string_to_token: "{{ join_token.stdout }}"
+        
+    - set_fact:
+        master_node: "{{ hostvars[inventory_hostname].ansible_host }}"
+
+- hosts: 'kube-node' 
+  gather_facts: False
+  any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
+  tasks:
+
+    - debug:
+        msg: "{{ hostvars[groups['kube-master'][0]].string_to_token }} {{ hostvars[groups['kube-master'][0]].master_node }}"
+
+    - name: Enable kubectl/kubeadm autocompletion (1/2)
+      shell: | 
+        kubectl completion bash > /etc/bash_completion.d/kubectl 
+        kubeadm completion bash > /etc/bash_completion.d/kubeadm 
+
+    - name: Join Worker Node to Cluster
+      shell: |
+        kubeadm join {{ hostvars[groups['kube-master'][0]].master_node }}:6443 --token {{ hostvars[groups['kube-master'][0]].string_to_token }} --discovery-token-unsafe-skip-ca-verification

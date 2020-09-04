@@ -1,0 +1,22 @@
+---
+# tasks file for post-scripts
+
+# Create the system:kube-apiserver-to-kubelet ClusterRole with permissions to access the Kubelet API and perform most common tasks associated with managing pods
+# Bind the system:kube-apiserver-to-kubelet ClusterRole to the kubernetes user
+- name: RBAC for Kubelet Authorization (1/2)
+  copy: 
+    src: "authorization.yaml"
+    dest: "{{ KUBERNETES_DIRECTORY }}"
+    mode: 0600 
+
+- name: Deploying RBAC Authorization 
+  shell: >
+    {{ KUBERNETES_BINARY_PATH }}/kubectl apply -f {{ KUBERNETES_DIRECTORY }}/authorization.yaml 
+  register: kube_result
+
+- name: Deploying the DNS Cluster Add-on
+  shell: > 
+    {{ KUBERNETES_BINARY_PATH }}/kubectl apply -f https://storage.googleapis.com/kubernetes-the-hard-way/coredns-1.7.0.yaml
+  register: dns_result  
+
+

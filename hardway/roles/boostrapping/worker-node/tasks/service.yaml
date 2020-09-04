@@ -1,0 +1,83 @@
+---
+# Configure CNI Networking
+- name: Create the bridge network configuration file
+  template: 
+    src: "10-bridge.conf.j2"
+    dest: "/etc/cni/net.d/10-bridge.conf"
+    mode: 0600
+
+- name: Create the loopback network configuration file
+  copy: 
+    src: "99-loopback.conf"
+    dest: "/etc/cni/net.d/99-loopback.conf"
+    mode: 0600
+
+# Configure the Kubelet
+- name: Configure the Kubelet 
+  copy: 
+    src: "{{ item }}"
+    dest: "/var/lib/kubernetes/"
+    remote_src: yes
+    mode: 0600
+  with_items: 
+    - "{{ KUBERNETES_DIRECTORY }}/pki/ca/ca.pem"
+
+- name: Configure the Kubelet 
+  copy: 
+    src: "{{ item }}"
+    dest: "/var/lib/kubelet/"
+    remote_src: yes
+    mode: 0600
+  with_items:
+    - "{{ KUBERNETES_DIRECTORY }}/pki/clients/{{ inventory_hostname }}-key.pem"
+    - "{{ KUBERNETES_DIRECTORY }}/pki/clients/{{ inventory_hostname }}.pem"
+    - "{{ KUBERNETES_DIRECTORY }}/pki/ca/ca.pem"
+
+- name: Configure the kubeconfig for Kubelet
+  copy: 
+    src: "{{ KUBERNETES_DIRECTORY }}/kubeconfig/{{ inventory_hostname }}.kubeconfig"
+    dest: "/var/lib/kubelet/kubeconfig"
+    remote_src: yes
+    mode: 0600 
+
+- name: Create the kubelet-config.yaml configuration file
+  template: 
+    src: "kubelet-config.yaml.j2"
+    dest: "/var/lib/kubelet/kubelet-config.yaml" 
+    mode: 0600
+
+- name: Create the kubelet.service systemd unit file
+  template: 
+    src: "kubelet.service.j2"
+    dest: "/etc/systemd/system/kubelet.service" 
+    mode: 0644
+
+# Configure the Kubernetes Proxy 
+- name: Configure the kubeconfig for Proxy
+  copy: 
+    src: "{{ KUBERNETES_DIRECTORY }}/kubeconfig/kube-proxy.kubeconfig"
+    dest: "/var/lib/kube-proxy/kubeconfig"
+    remote_src: yes
+    mode: 0600 
+
+- name: Create the kube-proxy-config.yaml configuration file
+  template: 
+    src: "kube-proxy-config.yaml.j2"
+    dest: "/var/lib/kube-proxy/kube-proxy-config.yaml"
+    mode: 0600
+
+- name: Create the kube-proxy.service systemd unit file
+  copy: 
+    src: "kube-proxy.service"
+    dest: "/etc/systemd/system/kube-proxy.service"
+    mode: 0644
+
+- name: Start the worker-node Server
+  systemd:
+    name: "{{ item }}" 
+    daemon_reload: yes
+    state: started
+    enabled: yes
+  with_items: 
+    - kubelet 
+    - kube-proxy

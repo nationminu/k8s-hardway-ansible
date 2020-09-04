@@ -1,0 +1,65 @@
+---
+- name: Add CRI-O kubic repo
+  yum_repository:
+    name: devel_kubic_libcontainers_stable
+    description: Stable Releases of Upstream github.com/containers packages (CentOS_$releasever)
+    baseurl: http://widehat.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/CentOS_$releasever/
+    gpgcheck: yes
+    gpgkey: http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/CentOS_$releasever/repodata/repomd.xml.key
+  when: ansible_distribution in ["CentOS"]
+
+- name: Add CRI-O kubic repo
+  yum_repository:
+    name: "devel_kubic_libcontainers_stable_cri-o_{{ CRIO_VER }}"
+    description: "CRI-O {{ CRIO_VER }} (CentOS_$releasever)"
+    baseurl: "http://widehat.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/{{ CRIO_VER }}/CentOS_$releasever/"
+    gpgcheck: yes
+    gpgkey: "http://widehat.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/{{ CRIO_VER }}/CentOS_$releasever/repodata/repomd.xml.key"
+  when: ansible_distribution in ["CentOS"]
+
+- name: Download and Install containerd - crictl
+  unarchive:
+    src: "{{ item }}"
+    dest: "{{ KUBERNETES_BINARY_PATH }}" 
+    remote_src: yes    
+    mode: '0700'
+  with_items:  
+    - https://github.com/kubernetes-sigs/cri-tools/releases/download/{{ CRI_VER }}/crictl-{{ CRI_VER }}-linux-amd64.tar.gz
+
+- name: Crictl to connect to containerd
+  copy:
+    dest: "/etc/crictl.yaml"
+    content: |
+      # Containerd
+      #runtime-endpoint: unix:///run/containerd/containerd.sock
+      # Cri-o
+      runtime-endpoint: unix:///var/run/crio/crio.sock       
+    mode: 0600 
+
+- name: Install package for crio
+  yum:
+    name: "{{ item }}"
+    state: installed
+  with_items:
+    - crio 
+#    - podman 
+  
+- name: Enable crio Serivce
+  systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  with_items:
+    - crio  
+
+- name: Get crictl completion
+  command: "{{ KUBERNETES_BINARY_PATH }}/crictl completion"
+  changed_when: False
+  register: cri_completion 
+  
+- name: Install crictl completion
+  copy:
+    dest: /etc/bash_completion.d/crictl
+    content: "{{ cri_completion.stdout }}"
+  become: True    

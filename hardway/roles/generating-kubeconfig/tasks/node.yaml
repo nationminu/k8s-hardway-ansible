@@ -1,0 +1,43 @@
+---
+# 1. The kubelet Kubernetes Configuration File
+- name: Generate a kubeconfig file for each worker node (1/2)
+#  shell: >
+  copy:
+    dest: "{{ KUBERNETES_DIRECTORY }}/genconfig-{{ item }}.sh"
+    content: |
+      #/usr/bin/env bash
+
+      {{ KUBERNETES_BINARY_PATH }}/kubectl config set-cluster {{ KUBERNETS_CLUSTER_NAME }} \
+      --certificate-authority={{ KUBERNETES_DIRECTORY }}/pki/ca/ca.pem \
+      --embed-certs=true \
+      --server=https://{{ KUBERNETES_PUBLIC_ADDRESS }}:6443 \
+      --kubeconfig={{ KUBERNETES_DIRECTORY }}/kubeconfig/{{ item }}.kubeconfig \
+        
+      {{ KUBERNETES_BINARY_PATH }}/kubectl config set-credentials system:node:{{ item }} \
+      --client-certificate={{ KUBERNETES_DIRECTORY }}/pki/clients/{{ item }}.pem \
+      --client-key={{ KUBERNETES_DIRECTORY }}/pki/clients/{{ item }}-key.pem \
+      --embed-certs=true \
+      --kubeconfig={{ KUBERNETES_DIRECTORY }}/kubeconfig/{{ item }}.kubeconfig
+        
+      {{ KUBERNETES_BINARY_PATH }}/kubectl config set-context default \
+      --cluster={{ KUBERNETS_CLUSTER_NAME }} \
+      --user=system:node:{{ item }} \
+      --kubeconfig={{ KUBERNETES_DIRECTORY }}/kubeconfig/{{ item }}.kubeconfig \
+        
+      {{ KUBERNETES_BINARY_PATH }}/kubectl config use-context default --kubeconfig={{ KUBERNETES_DIRECTORY }}/kubeconfig/{{ item }}.kubeconfig 
+    mode: 0700
+  with_items:
+    - "{{ groups['kube-node'] }}"
+
+- name: Generate a kubeconfig file for each worker node  (2/2)
+  shell: "{{ KUBERNETES_DIRECTORY }}/genconfig-{{ item }}.sh"
+  register: "node_result"
+  with_items:
+    - "{{ groups['kube-node'] }}"
+
+- debug:
+    msg: 
+      - "node result :  {{ item.results }} " 
+    verbosity: 2
+  with_items:
+    - "{{ node_result }}"

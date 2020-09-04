@@ -1,0 +1,35 @@
+--- 
+- name: Generate the Kubernetes API Server certificate and private key (1/2)
+  template:
+    src: "kubernetes-csr.json.j2"
+    dest: "{{ KUBERNETES_DIRECTORY }}/pki/api/kubernetes-csr.json"   
+
+## json pretty format : cat ~/pki/xx.json | python -m json.tool
+- name: Generate the Kubernetes API Server certificate and private key (2/2)
+  copy:
+    dest: "{{ KUBERNETES_DIRECTORY }}/gencert-kubernetes.sh"
+    content: |
+      #/usr/bin/env bash
+
+      {{ KUBERNETES_BINARY_PATH }}/cfssl gencert \
+      -ca={{ KUBERNETES_DIRECTORY }}/pki/ca/ca.pem \
+      -ca-key={{ KUBERNETES_DIRECTORY }}/pki/ca/ca-key.pem \
+      -config={{ KUBERNETES_DIRECTORY }}/pki/config/ca-config.json \
+      {% if groups['kube-master'] | length > 1 %}
+      -hostname=10.32.0.1,{{ hostvars[groups['kube-master'][0]].ansible_host }},{{ hostvars[groups['kube-master'][1]].ansible_host }},{{ hostvars[groups['kube-master'][2]].ansible_host }},{{ KUBERNETES_PUBLIC_ADDRESS }},127.0.0.1,{{ KUBERNETES_HOSTNAMES }} \
+      {% else %}
+      -hostname=10.32.0.1,{{ hostvars[groups['kube-master'][0]].ansible_host }},{{ KUBERNETES_PUBLIC_ADDRESS }},127.0.0.1,{{ KUBERNETES_HOSTNAMES }} \
+      {% endif %}
+      -profile=kubernetes \
+      {{ KUBERNETES_DIRECTORY }}/pki/api/kubernetes-csr.json \
+      | /usr/local/bin/cfssljson -bare {{ KUBERNETES_DIRECTORY }}/pki/api/kubernetes
+    mode: 0700 
+
+- name: Certificate Authority
+  shell: "{{ KUBERNETES_DIRECTORY }}/gencert-kubernetes.sh"
+  register: "api_result" 
+
+- debug:
+    msg: 
+      - "api result :  {{ api_result }} " 
+    verbosity: 2 

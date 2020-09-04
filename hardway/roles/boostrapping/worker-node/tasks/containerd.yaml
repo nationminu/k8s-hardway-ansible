@@ -1,0 +1,86 @@
+---
+- name: Download and Install containerd - runc
+  get_url:
+    url: "{{ item }}"
+    dest: "{{ KUBERNETES_BINARY_PATH }}"
+    mode: '0700'
+  with_items:    
+    - https://github.com/opencontainers/runc/releases/download/{{ RUNC_VER }}/runc.amd64
+
+- name: Download and Install containerd - containerd
+  unarchive:
+    src: "{{ item }}"
+    dest: "/tmp/containerd" 
+    remote_src: yes    
+    mode: '0700'
+  with_items:    
+    - https://github.com/containerd/containerd/releases/download/v{{ CONTAINERD_VER }}/containerd-{{ CONTAINERD_VER }}-linux-amd64.tar.gz
+
+- name: Install the Runc
+  file:
+    src: "{{ KUBERNETES_BINARY_PATH }}/runc.amd64"
+    dest: "{{ KUBERNETES_BINARY_PATH }}/runc" 
+    state: link
+ 
+- name: Download and Install containerd - crictl
+  unarchive:
+    src: "{{ item }}"
+    dest: "{{ KUBERNETES_BINARY_PATH }}" 
+    remote_src: yes    
+    mode: '0700'
+  with_items:  
+    - https://github.com/kubernetes-sigs/cri-tools/releases/download/{{ CRI_VER }}/crictl-{{ CRI_VER }}-linux-amd64.tar.gz
+
+- name: Crictl to connect to containerd
+  copy:
+    dest: "/etc/crictl.yaml"
+    content: |
+      # Containerd
+      runtime-endpoint: unix:///run/containerd/containerd.sock
+      # Cri-o
+      # runtime-endpoint: unix:///var/run/crio/crio.sock       
+    mode: 0600
+
+- name: Install the worker binaries
+  shell: >
+    mv /tmp/containerd/bin/* {{ KUBERNETES_BINARY_PATH }} && 
+
+- name: Recursively remove directory
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items: 
+    - "/tmp/containerd"        
+
+# Configure containerd
+- name: Create the containerd configuration file
+  copy: 
+    src: "config.toml"
+    dest: "/etc/containerd/config.toml"
+    mode: 0600
+ 
+- name: Create the containerd.service systemd unit file
+  copy: 
+    src: "containerd.service"
+    dest: "/etc/systemd/system/containerd.service"
+    mode: 0700    
+
+- name: Start the Containerd
+  systemd:
+    name: "{{ item }}" 
+    daemon_reload: yes
+    state: started
+    enabled: yes
+  with_items:
+    - containerd   
+ 
+- name: Get crictl completion
+  command: "{{ KUBERNETES_BINARY_PATH }}/crictl completion"
+  changed_when: False
+  register: cri_completion 
+  
+- name: Install crictl completion
+  copy:
+    dest: /etc/bash_completion.d/crictl
+    content: "{{ cri_completion.stdout }}"
+  become: True

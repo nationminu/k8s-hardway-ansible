@@ -1,0 +1,22 @@
+{
+  "KUBERNETS_CLUSTER_NAME": "rockplace-k8s-the-hard-way",
+  "KUBERNETES_DIRECTORY": "/etc/kubernetes",
+  "KUBERNETES_PUBLIC_ADDRESS": "10.65.40.10",
+  "KUBERNETES_HOSTNAMES": "kubernetes,kubernetes.default,kubernetes.default.svc,kubernetes.default.svc.cluster,kubernetes.svc.cluster.local",
+  "KUBERNETES_BINARY_PATH": "/usr/local/bin",
+  "KUBERNETES_FQDN": "mwk8s.com",
+  "KUBERNETES_VERSION": "v1.18.8",
+  "ETCD_VER": "v3.4.13",
+  "CRI_VER": "v1.18.0",
+  "CNI_VER": "v0.8.7",
+  "CONTAINERD_VER": "1.4.0",
+  "RUNC_VER": "v1.0.0-rc92",
+  "POD_CIDR": "10.22.0.0/16",
+  "POD_CIDR_PREFIX": "10.22",
+  "TLS_CN": "Kubernetes",
+  "TLS_C": "KR",
+  "TLS_L": "SEOUL",
+  "TLS_OU": "rockPLACE PST",
+  "TLS_O": "rockPLACE",
+  "TLS_ST": "SEOUL"
+}

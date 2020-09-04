@@ -1,0 +1,17 @@
+---
+# tasks file for generating-secrets
+
+- name: Generate an encryption key
+  shell: "head -c 32 /dev/urandom | base64"
+  register: ENCRYPTION_KEY
+  when: "'{{ groups['kube-master'][0] }}' == '{{ inventory_hostname }}'"
+
+- debug:
+    msg: 
+      - "DEBUG RESULT : {{ ENCRYPTION_KEY.stdout }}" 
+    verbosity: 0
+
+- name: Create the encryption-config.yaml encryption config file
+  template:
+    src: "encryption-config.yaml.j2"    
+    dest: "{{ KUBERNETES_DIRECTORY }}/secret/encryption-config.yaml"    

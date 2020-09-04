@@ -1,0 +1,153 @@
+---
+- hosts: 'all:!bastion' 
+  gather_facts: False
+  any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
+  tasks:
+    
+    ####################################
+    ## 1. Set Hostname on Nodes
+    ####################################
+    - name: change hostname every node
+      hostname:
+        name: "{{ inventory_hostname }}" 
+
+    ####################################
+    ## 2. Disable SWAP
+    ####################################
+    - name: Disable swapoff
+      shell: |
+        sudo swapoff -a  
+
+    - name: Disable swapoff permanently
+      replace:
+        path: /etc/fstab
+        regexp: '^(\s*)([^#\n]+\s+)(\w+\s+)swap(\s+.*)$'
+        replace: '#\1\2\3swap\4'
+        backup: yes
+
+    ####################################
+    ## 3. Update Iptables Settings(debian/ubuntu)
+    ####################################
+#    - name: The current kubeadm packages are not compatible with the nftables backend.
+#      alternatives:
+#        name: "{{ item.key }}"
+#        path: "{{ item.value }}"
+#      with_items:
+#        - {"key":"iptables","value":"/usr/sbin/iptables-legacy"}
+#        - {"key":"ip6tables","value":"/usr/sbin/ip6tables-legacy"}
+#        - {"key":"arptables","value":"/usr/sbin/arptables-legacy"}
+#        - {"key":"ebtables","value":"/usr/sbin/ebtables-legacy"}
+    
+    - name: Update Iptables Settings (1/2)
+      copy:
+        dest: /etc/sysctl.d/k8s.conf
+        content: |
+          net.bridge.bridge-nf-call-ip6tables = 1
+          net.bridge.bridge-nf-call-iptables = 1 
+
+    - name: Update Iptables Settings (2/2)
+      shell: | 
+        sysctl --system
+
+    ####################################
+    ## 4. Configure Firewall(Disabled)
+    ####################################
+    - name: Firewalld Disabled
+      systemd:
+        name: firewalld
+        state: stopped
+        enabled: false
+ 
+    ####################################
+    ## 5. Disable SELinux
+    ####################################
+    - name: Set SELinux in permissive mode (effectively disabling it)  
+      shell: |
+        setenforce 0
+        sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config 
+ 
+    ####################################
+    ## 6. Configure Kubernetes Repository && Install Docker && Kubernetes Utility
+    ####################################
+    - name: Uninstall old versions if exists
+      yum:
+        name: "{{ item }}"
+        state: removed
+      with_items:
+        - docker
+        - docker-client
+        - docker-client-latest
+        - docker-common 
+        - docker-latest 
+        - docker-latest-logrotate 
+        - docker-logrotate 
+        - docker-engine
+  
+    - name: Download Docker Repository
+      copy:
+        dest: /etc/yum.repos.d/docker-ce.repo 
+        content: |
+          [docker-ce-stable]
+          name=Docker CE Stable - $basearch
+          baseurl=https://download.docker.com/linux/centos/7/$basearch/stable
+          enabled=1
+          gpgcheck=1
+          gpgkey=https://download.docker.com/linux/centos/gpg        
+ 
+    - name: Installing kubeadm, kubelet and kubectl Repository
+      copy:
+        dest: "/etc/yum.repos.d/k8s.repo"
+        content: |
+          [kubernetes]
+          name=Kubernetes
+          baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-\$basearch
+          enabled=1
+          gpgcheck=1
+          repo_gpgcheck=1
+          gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+          #exclude=kubelet kubeadm kubectl
+ 
+    - name: Install pakcage for k8s
+      yum:
+        name: "{{ item }}"
+        state: installed
+      with_items:
+        - docker-ce 
+        - docker-ce-cli 
+        - containerd.io
+        - kubeadm
+        - kubelet
+        - kubectl 
+
+    - name: Set up the Docker daemon (1/2)
+      file:
+        name: /etc/docker
+        state: directory 
+        mode: '0755'
+
+    - name: Set up the Docker daemon (2/2)
+      copy:
+        dest: "/etc/docker/daemon.json"
+        content: |
+          {
+            "exec-opts": ["native.cgroupdriver=systemd"],
+            "log-driver": "json-file",
+            "log-opts": {
+              "max-size": "100m"
+            },
+            "storage-driver": "overlay2",
+            "storage-opts": [
+              "overlay2.override_kernel_check=true"
+            ]
+          }
+
+    - name: Enable Docker/kubelet Serivce
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+        daemon_reload: yes
+      with_items:
+        - docker 
+        - kubelet 
+            

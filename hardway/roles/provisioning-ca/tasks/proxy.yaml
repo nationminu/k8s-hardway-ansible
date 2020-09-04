@@ -1,0 +1,30 @@
+---
+# The Admin Certificate  
+- name: Generate the kube-proxy client certificate and private key (1/2)
+  template:
+    src: "proxy-csr.json.j2"
+    dest: "{{ KUBERNETES_DIRECTORY }}/pki/proxy/kube-proxy-csr.json"    
+
+## json pretty format : cat ~/pki/xx.json | python -m json.tool
+- name: Generate the kube-proxy client certificate and private key (2/2) 
+  copy:
+    dest: "{{ KUBERNETES_DIRECTORY }}/gencert-proxy.sh"
+    content: |
+      #/usr/bin/env bash
+      {{ KUBERNETES_BINARY_PATH }}/cfssl gencert \
+      -ca={{ KUBERNETES_DIRECTORY }}/pki/ca/ca.pem \
+      -ca-key={{ KUBERNETES_DIRECTORY }}/pki/ca/ca-key.pem \
+      -config={{ KUBERNETES_DIRECTORY }}/pki/config/ca-config.json \
+      -profile=kubernetes \
+      {{ KUBERNETES_DIRECTORY }}/pki/proxy/kube-proxy-csr.json  \
+      | {{ KUBERNETES_BINARY_PATH }}/cfssljson -bare {{ KUBERNETES_DIRECTORY }}/pki/proxy/kube-proxy
+    mode: 0700
+
+- name: Certificate Authority
+  shell: "{{ KUBERNETES_DIRECTORY }}/gencert-proxy.sh"
+  register: proxy_result 
+
+- debug:
+    msg: 
+      - "proxy result : {{ proxy_result }}" 
+    verbosity: 2 

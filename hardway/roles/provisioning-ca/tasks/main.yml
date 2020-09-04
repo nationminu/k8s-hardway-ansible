@@ -1,0 +1,76 @@
+---
+# tasks file for provisioning-ca
+
+- name: Create a directory if it does not exist for pki
+  file:
+    path: "{{ KUBERNETES_DIRECTORY }}/{{ item }}"
+    state: directory
+    mode: '0755'
+  with_items:
+    - "pki/config"
+    - "pki/admin"
+    - "pki/api"
+    - "pki/ca"
+    - "pki/clients"
+    - "pki/controller"
+    - "pki/proxy"
+    - "pki/scheduler"
+    - "pki/service-account"
+    - "config"
+    - "kubeconfig"
+    - "secret"
+ 
+- name: check if pem(service-account) file exists
+  stat: 
+    path: "{{ KUBERNETES_DIRECTORY }}/pki/service-account/service-account.pem"
+  register: file
+
+# Generate the CA configuration file:
+- name: Generate the CA configuration file
+  copy:
+    src: "ca-config.json"
+    dest: "{{ KUBERNETES_DIRECTORY }}/pki/config/ca-config.json"   
+  tags:
+    - always
+  when: file.stat.exists == false
+
+- import_tasks: ca.yaml  
+  tags:
+    - ca
+  when: file.stat.exists == false
+  
+- import_tasks: admin.yaml  
+  tags:
+    - admin
+  when: file.stat.exists == false
+  
+- import_tasks: client.yaml  
+  tags:
+    - client    
+  when: file.stat.exists == false
+  
+- import_tasks: controller.yaml  
+  tags:
+    - controller    
+  when: file.stat.exists == false
+  
+- import_tasks: proxy.yaml  
+  tags:
+    - proxy   
+  when: file.stat.exists == false
+   
+- import_tasks: scheduler.yaml  
+  tags:
+    - scheduler    
+  when: file.stat.exists == false
+  
+- import_tasks: api.yaml  
+  tags:
+    - api      
+  when: file.stat.exists == false
+    
+- import_tasks: service-account.yaml  
+  tags:
+    - service-account 
+  when: file.stat.exists == false
+         

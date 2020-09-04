@@ -1,0 +1,129 @@
+---
+- hosts: all
+  gather_facts: false
+  any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
+  tags: always
+
+  tasks: 
+    - name: "Set up environment varibles"
+      set_fact: 
+        # Variables for KUBERNETES Hardway
+        # external varibles : ansible-playbook -i inventory.ini -e @hardway.json hardway.yaml
+        KUBERNETS_CLUSTER_NAME: rockplace-k8s-the-hard-way
+        KUBERNETES_DIRECTORY: "/etc/kubernetes"
+        KUBERNETES_PUBLIC_ADDRESS: "10.65.40.10" # LB IP
+        KUBERNETES_HOSTNAMES: "kubernetes,kubernetes.default,kubernetes.default.svc,kubernetes.default.svc.cluster,kubernetes.svc.cluster.local"
+        KUBERNETES_BINARY_PATH: "/usr/local/bin"
+        KUBERNETES_FQDN: "mwk8s.com"
+        KUBERNETES_VERSION: v1.18.8
+        KUBERNETES_RUNTIME: "crio"
+
+        ETCD_VER: "v3.4.13"
+        CRI_VER: "v1.18.0"
+        CNI_VER: "v0.8.7"
+        CONTAINERD_VER: "1.4.0"
+        RUNC_VER: "v1.0.0-rc92"
+        POD_CIDR: "10.22.0.0/16" # ip route add 10.22.0.0/16 via 10.65.40.1 dev eth0
+        POD_CIDR_PREFIX: "10.22" #24
+        CRIO_VER: "1.18"
+
+        # Information for Site Owners and Administrators
+        # https://cabforum.org/information-for-site-owners-and-administrators/
+        TLS_CN: "Kubernetes"
+        TLS_C: "KR"
+        TLS_L: "SEOUL"
+        TLS_OU: "rockPLACE PST"
+        TLS_O: "rockPLACE"
+        TLS_ST: "SEOUL"
+      no_log: true
+
+    - ping:
+
+    - debug:
+        msg:
+          - "########## Variables for KUBERNETES Hardway #############"
+          - "KUBERNETS_CLUSTER_NAME : {{ KUBERNETS_CLUSTER_NAME }}"
+          - "KUBERNETES_DIRECTORY : {{ KUBERNETES_DIRECTORY }}"
+          - "KUBERNETES_VERSION : {{ KUBERNETES_VERSION }}"
+          - "KUBERNETES_PUBLIC_ADDRESS : {{ KUBERNETES_PUBLIC_ADDRESS }}"
+          - "KUBERNETES_HOSTNAMES : {{ KUBERNETES_HOSTNAMES }}"
+          - "KUBERNETES_BINARY_PATH: {{ KUBERNETES_BINARY_PATH }}"
+          - "KUBERNETES_FQDN : {{ KUBERNETES_FQDN }}"
+          - "ETCD_VER:  {{ ETCD_VER }}"
+          - "CRI_VER: {{ CRI_VER }}"
+          - "CNI_VER: {{ CNI_VER }}"
+          - "CONTAINERD_VER: {{ CONTAINERD_VER }}"
+          - "RUNC_VER: {{ RUNC_VER }}"
+          - "POD_CIDR: {{ POD_CIDR }}"
+          - "########## Variables for KUBERNETES CA #############"
+          - "TLS_CN : {{ TLS_CN }}"
+          - "TLS_C : {{ TLS_C }}"
+          - "TLS_L : {{ TLS_L }}"
+          - "TLS_OU : {{ TLS_OU }}"
+          - "TLS_O : {{ TLS_O }}"
+          - "TLS_ST : {{ TLS_ST }}"
+        verbosity: 2      
+
+- hosts: all 
+  any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
+  gather_facts: False  
+  roles:
+    - { role: prerequisites/ssh-config }
+
+- hosts: jumpbox
+  any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
+  gather_facts: False  
+  roles:
+    - { role: prerequisites/pre-config }
+    - { role: install-tools/haproxy } 
+
+- hosts: k8s-cluster
+  any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
+  gather_facts: False  
+  roles: 
+    - { role: prerequisites/pre-config }
+ 
+- hosts: kube-master[0]
+  any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
+  gather_facts: False
+  roles:
+    - { role: install-tools/cfssl }
+    - { role: install-tools/kubernetes }
+    - { role: provisioning-ca , tags: ["ca", "admin", "client", "controller", "proxy", "scheduler", "api" , "service-account"]}
+    - { role: generating-kubeconfig, tags: ["node", "admin", "controller", "proxy", "scheduler"]}
+    - { role: generating-secrets } 
+  
+- hosts: all
+  any_errors_fatal: "{{ any_errors_fatal | default(true) }}"  
+  tasks:
+  - name: Distribute the Kubernetes Configuration Files
+    synchronize: 
+      src: "{{ KUBERNETES_DIRECTORY }}"
+      dest: "/etc/"
+    delegate_to: "{{ groups['kube-master'][0] }}"     
+
+- hosts: "kube-master"
+  any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
+  gather_facts: False
+  roles: 
+    - { role: install-tools/kubernetes }
+    - { role: boostrapping/etcd }
+    - { role: boostrapping/control-plane }
+
+- hosts: "kube-node"
+  any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
+  gather_facts: False
+  roles:      
+    - { role: boostrapping/worker-node , tags: ["install","service","runtime"]} 
+ 
+- hosts: all
+  any_errors_fatal: "{{ any_errors_fatal | default(true) }}"   
+  gather_facts: False  
+  roles:
+    - { role: networking/route }  
+
+- hosts: "kube-master[0]"
+  any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
+  gather_facts: False
+  roles:       
+    - { role: post-scripts } 

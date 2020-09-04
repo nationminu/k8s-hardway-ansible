@@ -1,0 +1,23 @@
+---
+# tasks file for prerequisites/ssh-config
+
+- name: create ssh config
+  become: true
+  template:
+    src: ssh_config.j2
+    dest: /etc/ssh/ssh_config
+    mode: 0644
+
+- name: create bash_completion_ssh
+  become: true
+  copy:
+    src: bash_completion_ssh
+    dest: /etc/bash_completion.d/ssh
+    mode: u+x,g+x,o+x
+
+- name: apply bash_completion_ssh
+  become: true
+  shell: |
+    echo 'source /etc/bash_completion.d/ssh' > /etc/profile.d/ssh_completion.sh
+    chmod +x /etc/profile.d/ssh_completion.sh
+...
