@@ -12,8 +12,8 @@
 
 --- 
 
-crio v1.18
-runc v1.0.0-rc92
+* [cri-o] crio v1.18
+* [runc] runc v1.0.0-rc92
 
 ## Labs
 본 튜토리얼은 RHEV 환경에서 진행하며 VM 생성 과정은 포함하지 않습니다.  
