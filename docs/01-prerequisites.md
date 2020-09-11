@@ -1,7 +1,19 @@
 # Prerequisites
 
-## Hardway Tutorial Topology
+## Hardway System
 
+본 튜토리얼은 master 3 대, worker 3 대로 구성합니다.
+
+| Hostname      | CPU           | Memory  |
+| ------------- |:-------------:| -------:|
+| master1       | 2 core        |    4G   |
+| master2       | 2 core        |    4G   |
+| master3       | 2 core        |    4G   |
+| worker1       | 2 core        |    4G   |
+| worker2       | 2 core        |    4G   |
+| worker3       | 2 core        |    4G   |
+
+### Hardway Topology
 ![Image of Hardway](https://github.com/nationminu/k8s-hardway-ansible/blob/master/docs/images/hardway.png)
 
 ```
