@@ -16,7 +16,7 @@
         KUBERNETES_BINARY_PATH: "/usr/local/bin"
         KUBERNETES_FQDN: "mwk8s.com"
         KUBERNETES_VERSION: v1.18.8
-        KUBERNETES_RUNTIME: "crio"
+        KUBERNETES_RUNTIME: "containerd"
 
         ETCD_VER: "v3.4.13"
         CRI_VER: "v1.18.0"
@@ -24,7 +24,7 @@
         CONTAINERD_VER: "1.4.0"
         RUNC_VER: "v1.0.0-rc92"
         POD_CIDR: "10.22.0.0/16" # ip route add 10.22.0.0/16 via 10.65.40.1 dev eth0
-        POD_CIDR_PREFIX: "10.22" #24
+        POD_CIDR_PREFIX: "10.22" # .1.0/24
         CRIO_VER: "1.18"
 
         # Information for Site Owners and Administrators
@@ -69,20 +69,14 @@
   gather_facts: False  
   roles:
     - { role: prerequisites/ssh-config }
+    - { role: prerequisites/pre-config }
 
 - hosts: jumpbox
   any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
   gather_facts: False  
-  roles:
-    - { role: prerequisites/pre-config }
-    - { role: install-tools/haproxy } 
-
-- hosts: k8s-cluster
-  any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
-  gather_facts: False  
   roles: 
-    - { role: prerequisites/pre-config }
- 
+    - { role: install-tools/haproxy } 
+  
 - hosts: kube-master[0]
   any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
   gather_facts: False

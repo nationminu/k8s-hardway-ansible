@@ -21,6 +21,39 @@
 ### Hardway Tutorial Topology
 ![Image of Hardway](./images/hardway.png)
 
+## Configuration for k8s Hardway
+```
+tasks: 
+    - name: "Set up environment varibles"
+      set_fact: 
+        # Variables for KUBERNETES Hardway
+        # external varibles : ansible-playbook -i inventory.ini -e @hardway.json hardway.yaml
+        KUBERNETS_CLUSTER_NAME: rockplace-k8s-the-hard-way
+        KUBERNETES_DIRECTORY: "/etc/kubernetes"
+        KUBERNETES_PUBLIC_ADDRESS: "10.65.40.10" # LB(Haproxy) IP
+        KUBERNETES_HOSTNAMES: "kubernetes,kubernetes.default,kubernetes.default.svc,kubernetes.default.svc.cluster,kubernetes.svc.cluster.local"
+        KUBERNETES_BINARY_PATH: "/usr/local/bin"
+        KUBERNETES_FQDN: "example.com"
+        KUBERNETES_VERSION: v1.18.8
+        KUBERNETES_RUNTIME: "containerd"
+
+        ETCD_VER: "v3.4.13"
+        CRI_VER: "v1.18.0"
+        CNI_VER: "v0.8.7"
+        CONTAINERD_VER: "1.4.0"
+        RUNC_VER: "v1.0.0-rc92"
+        POD_CIDR: "10.22.0.0/16" # not used
+        POD_CIDR_PREFIX: "10.22" # .1.0/24 : worker1, .2.0/24 : worker2, .2.0/24 : worker3, 
+        CRIO_VER: "1.18"
+
+        TLS_CN: "Kubernetes"
+        TLS_C: "KR"
+        TLS_L: "SEOUL"
+        TLS_OU: "rockPLACE PST"
+        TLS_O: "rockPLACE"
+        TLS_ST: "SEOUL"
+      no_log: true
+```
 
 ## Provide a bash completion on host name
 ```
@@ -95,8 +128,7 @@ complete -F _ssh ssh
   any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
   gather_facts: False  
   roles: 
-    - { role: prerequisites/pre-config }
-     
+    - { role: prerequisites/pre-config } 
 ```
 
 ### ansible tasks
@@ -263,14 +295,14 @@ listen stats :9000
     stats uri /
   
 # api
-frontend  k8s-master
+frontend  k8s-apiserver
     bind  :6443
     mode tcp
     option tcplog
     default_backend k8s-master
   
 # api
-backend k8s-master
+backend k8s-apiserver
     balance source
     mode tcp 
 {% if groups['kube-master'] | length > 1 %}

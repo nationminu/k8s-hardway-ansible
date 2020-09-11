@@ -38,14 +38,14 @@ listen stats :9000
     stats uri /
   
 # api
-frontend  k8s-master
+frontend  k8s-apiserver
     bind  :6443
     mode tcp
     option tcplog
     default_backend k8s-master
   
 # api
-backend k8s-master
+backend k8s-apiserver
     balance source
     mode tcp 
 {% if groups['kube-master'] | length > 1 %}

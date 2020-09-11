@@ -19,7 +19,7 @@
 본 튜토리얼은 RHEV 환경에서 진행하며 VM 생성 과정은 포함하지 않습니다.  
 
 * [Prerequisites](docs/01-prerequisites.md)
-* [Installing the Client Tools](docs/02-client-tools.md) 
+* [Installing the Client Tools](docs/02-install-tools.md) 
 * [Provisioning the CA and Generating TLS Certificates](docs/04-certificate-authority.md)
 * [Generating Kubernetes Configuration Files for Authentication](docs/05-kubernetes-configuration-files.md)
 * [Generating the Data Encryption Config and Key](docs/06-data-encryption-keys.md)
