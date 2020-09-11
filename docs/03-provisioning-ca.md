@@ -67,8 +67,9 @@ export TLS_ST="SEOUL"
         }
     }
 }
-
-# SHELL Command
+```
+* SHELL Command
+```
 cat > ca-config.json <<EOF
 {
   "signing": {
@@ -133,8 +134,10 @@ EOF
         }
     ]
 }
+```
 
-# SHELL Commands
+* SHELL Commands
+```
 cat > ca-csr.json <<EOF
 {
   "CN": "${TLS_CN}",
@@ -210,8 +213,10 @@ cfssl gencert -initca ca-csr.json | cfssljson -bare ca
         }
     ]
 }
+```
 
-# SHELL Commands
+* SHELL Commands
+```
 cat > admin-csr.json <<EOF
 {
   "CN": "admin",
@@ -392,8 +397,10 @@ done
         }
     ]
 }
+```
 
-# SHELL Commands
+* SHELL Commands
+```
 cat > kube-controller-manager-csr.json <<EOF
 {
   "CN": "system:kube-controller-manager",
@@ -474,8 +481,10 @@ cfssl gencert \
         }
     ]
 }
+```
 
-# SHELL Commands
+* SHELL Commands
+```
 cat > kube-proxy-csr.json <<EOF
 {
   "CN": "system:kube-proxy",
@@ -556,8 +565,10 @@ cfssl gencert \
         }
     ]
 }
+```
 
-# SHELL Commands
+* SHELL Commands
+```
 cat > kube-scheduler-csr.json <<EOF
 {
   "CN": "system:kube-scheduler",
@@ -603,9 +614,10 @@ cfssl gencert \
         }
     ]
 }
+```
 
-# SHELL Commands
-
+* SHELL Commands
+```
 export KUBERNETES_PUBLIC_ADDRESS=10.65.40.10
 export MASTERS_ADDRESS=10.65.40.11,10.65.40.12,10.65.40.13
 export KUBERNETES_HOSTNAMES=kubernetes,kubernetes.default,kubernetes.default.svc,kubernetes.default.svc.cluster,kubernetes.svc.cluster.local
@@ -690,8 +702,10 @@ cfssl gencert \
         }
     ]
 }
+```
 
-# SHELL Commands
+* SHELL Commands
+```
 cat > service-account-csr.json <<EOF
 {
   "CN": "service-accounts",
