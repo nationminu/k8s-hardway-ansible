@@ -21,6 +21,35 @@
 ### Hardway Tutorial Topology
 ![Image of Hardway](./images/hardway.png)
 
+### Update ansible inventory : inventory.ini
+```
+controller-0.example.com ansible_host=10.65.40.11 ansible_user=root
+controller-1.example.com ansible_host=10.65.40.12 ansible_user=root
+controller-2.example.com ansible_host=10.65.40.13 ansible_user=root
+worker-0.example.com ansible_host=10.65.40.16 ansible_user=root
+worker-1.example.com ansible_host=10.65.40.17 ansible_user=root
+worker-2.example.com ansible_host=10.65.40.18 ansible_user=root 
+
+bastion.example.com ansible_host=10.65.40.10 ansible_user=root 
+
+[jumpbox]
+bastion.example.com
+
+[kube-master]
+controller-0.example.com
+controller-1.example.com
+controller-2.example.com
+
+[kube-node]
+worker-0.example.com
+worker-1.example.com
+worker-2.example.com
+
+[k8s-cluster:children]
+kube-master
+kube-node
+```
+
 ## Configuration for k8s Hardway
 ```
 tasks: 
