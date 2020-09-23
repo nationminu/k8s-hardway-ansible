@@ -1,6 +1,5 @@
 # Prerequisites
 
-
 ## Hardway System Requirement
 
 ### Hardway Tutorial System
@@ -22,6 +21,7 @@
 ![Image of Hardway](./images/hardway.png)
 
 ### Update ansible inventory : inventory.ini
+대상 호스트의 인벤토리 정보를 설정합니다.
 ```
 controller-0.example.com ansible_host=10.65.40.11 ansible_user=root
 controller-1.example.com ansible_host=10.65.40.12 ansible_user=root
@@ -51,6 +51,7 @@ kube-node
 ```
 
 ## Configuration for k8s Hardway
+Ansible Playbook 에 사용될 변수를 선언합니다.
 ```
 tasks: 
     - name: "Set up environment varibles"
@@ -85,6 +86,7 @@ tasks:
 ```
 
 ## Provide a bash completion on host name
+키를 사용하여 SSH 접속을 할 수 있게 설정합니다.
 ```
 - hosts: all 
   any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
@@ -134,7 +136,7 @@ Host {{ hostvars[host]['inventory_hostname'] }} {{ hostvars[host]['inventory_hos
 {% endfor %}
 
 ```
-## ssh bash_competion file
+### ssh bash_competion file
 ```
 _ssh()
 {
@@ -152,6 +154,7 @@ complete -F _ssh ssh
 ``` 
 
 ## The configuration requirements for k8s
+모든 노드에 설치 전 필요한 환경 설정을 진행합니다.
 ```
 - hosts: all
   any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
@@ -247,7 +250,7 @@ complete -F _ssh ssh
 ```
 
 ## Install HAProxy on Centos/Red Hat with Ansible
-
+bastion/jumpbox 노드에 API 분산을 위한 Haproxy 를 설치/설정 합니다.
 ```
 - hosts: jumpbox
   any_errors_fatal: "{{ any_errors_fatal | default(true) }}"

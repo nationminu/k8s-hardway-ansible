@@ -1,7 +1,7 @@
 # Install Tools
 
 ## Install cfssl 
-
+인증서 생성을 위한 cfssl/cfssljson 을 설치합니다.
 ```
 - hosts: kube-master[0]
   any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
@@ -37,7 +37,7 @@
 ```
 
 ## Install kubectl 
-
+Kubernetes 인증 Config 파일을 만들기 위해 kubectl 명령어를 설치합니다.
 ```
 - hosts: kube-master[0]
   any_errors_fatal: "{{ any_errors_fatal | default(true) }}"

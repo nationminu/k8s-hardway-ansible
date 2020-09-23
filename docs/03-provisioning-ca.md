@@ -1,6 +1,8 @@
 # Provisioning CA
 
 ## set environment variables for shell command
+인증에 사용될 기본 정보를 환경 변수에 설정합니다.
+CN 정보는 각 인증 설정마다 다르게 설정됩니다.
 ```
 export TLS_CN="Kubernetes"
 export TLS_C="KR"
@@ -42,6 +44,7 @@ export TLS_ST="SEOUL"
 ```
 
 ### 1. Generate the CA configuration file, certificate, and private key
+튜토리얼에서 사용될 범용 CA 파일과 KEY 파일을 생성합니다.
 ```
 # Generate the CA configuration file:
 - name: Generate the CA configuration file
@@ -161,6 +164,7 @@ cfssl gencert -initca ca-csr.json | cfssljson -bare ca
 ```
 
 ### 3. Generate the admin certificate and private key
+Admin에서 사용될 CA와 KEY를 생성합니다.
 ```
 ---
 # The Admin Certificate  
@@ -245,6 +249,7 @@ cfssl gencert \
 ```
 
 ### 4. Generate a certificate and private key for each Kubernetes worker node
+각 Worker Node에서 사용될 CA와 KEY를 생성합니다.
 ```
 ---
 # The Admin Certificate  
@@ -345,6 +350,7 @@ done
 ```
 
 ### 5. Generate the kube-controller-manager client certificate and private key
+kube-controller-manager에서 사용될 CA와 KEY를 생성합니다.
 ```
 ---
 # The Admin Certificate  
@@ -429,6 +435,7 @@ cfssl gencert \
 ```
 
 ### 6. Generate the kube-proxy client certificate and private key
+kube-proxy에서 사용될 CA와 KEY를 생성합니다.
 ```
 ---
 # The Admin Certificate  
@@ -513,6 +520,7 @@ cfssl gencert \
 ```
 
 ### 7. Generate the kube-scheduler client certificate and private key
+kube-scheduler에서 사용될 CA와 KEY를 생성합니다.
 ```
 ---
 # The Admin Certificate  
@@ -592,7 +600,43 @@ cfssl gencert \
 ```
 
 ### 8. Generate the Kubernetes API Server certificate and private key
+API 에서 사용될 CA와 KEY를 생성합니다.
 ```
+--- 
+- name: Generate the Kubernetes API Server certificate and private key (1/2)
+  template:
+    src: "kubernetes-csr.json.j2"
+    dest: "{{ KUBERNETES_DIRECTORY }}/pki/api/kubernetes-csr.json"   
+
+## json pretty format : cat ~/pki/xx.json | python -m json.tool
+- name: Generate the Kubernetes API Server certificate and private key (2/2)
+  copy:
+    dest: "{{ KUBERNETES_DIRECTORY }}/gencert-kubernetes.sh"
+    content: |
+      #/usr/bin/env bash
+
+      {{ KUBERNETES_BINARY_PATH }}/cfssl gencert \
+      -ca={{ KUBERNETES_DIRECTORY }}/pki/ca/ca.pem \
+      -ca-key={{ KUBERNETES_DIRECTORY }}/pki/ca/ca-key.pem \
+      -config={{ KUBERNETES_DIRECTORY }}/pki/config/ca-config.json \
+      {% if groups['kube-master'] | length > 1 %}
+      -hostname=10.32.0.1,{{ hostvars[groups['kube-master'][0]].ansible_host }},{{ hostvars[groups['kube-master'][1]].ansible_host }},{{ hostvars[groups['kube-master'][2]].ansible_host }},{{ KUBERNETES_PUBLIC_ADDRESS }},127.0.0.1,{{ KUBERNETES_HOSTNAMES }} \
+      {% else %}
+      -hostname=10.32.0.1,{{ hostvars[groups['kube-master'][0]].ansible_host }},{{ KUBERNETES_PUBLIC_ADDRESS }},127.0.0.1,{{ KUBERNETES_HOSTNAMES }} \
+      {% endif %}
+      -profile=kubernetes \
+      {{ KUBERNETES_DIRECTORY }}/pki/api/kubernetes-csr.json \
+      | /usr/local/bin/cfssljson -bare {{ KUBERNETES_DIRECTORY }}/pki/api/kubernetes
+    mode: 0700 
+
+- name: Certificate Authority
+  shell: "{{ KUBERNETES_DIRECTORY }}/gencert-kubernetes.sh"
+  register: "api_result" 
+
+- debug:
+    msg: 
+      - "api result :  {{ api_result }} " 
+    verbosity: 2 
 ```
 
 * kubernetes-csr.json.j2
@@ -617,6 +661,10 @@ cfssl gencert \
 ```
 
 * SHELL Commands
+
+KUBERNETES_PUBLIC_ADDRESS : API LB Address
+MASTERS_ADDRESS : List of API Node Address 
+KUBERNETES_HOSTNAMES : List of kubernetes internal hostname
 ```
 export KUBERNETES_PUBLIC_ADDRESS=10.65.40.10
 export MASTERS_ADDRESS=10.65.40.11,10.65.40.12,10.65.40.13
@@ -651,6 +699,7 @@ cfssl gencert \
 ```
 
 ### 9. Generate the service-account certificate and private key
+service-account 에서 사용될 CA와 KEY를 생성합니다.
 ```
 --- 
 - name: Generate the service-account certificate and private key (1/2)
