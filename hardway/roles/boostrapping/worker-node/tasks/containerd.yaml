@@ -43,7 +43,7 @@
 
 - name: Install the worker binaries
   shell: >
-    mv /tmp/containerd/bin/* {{ KUBERNETES_BINARY_PATH }} && 
+    mv /tmp/containerd/bin/* {{ KUBERNETES_BINARY_PATH }}
 
 - name: Recursively remove directory
   file:
