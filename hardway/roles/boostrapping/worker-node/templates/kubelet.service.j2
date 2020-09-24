@@ -1,7 +1,7 @@
 [Unit]
 Description=Kubernetes Kubelet
 Documentation=https://github.com/kubernetes/kubernetes
-{% KUBERNETES_RUNTIME != "crio" %}
+{% if KUBERNETES_RUNTIME != "crio" %}
 After=containerd.service
 Requires=containerd.service
 {% endif %}
