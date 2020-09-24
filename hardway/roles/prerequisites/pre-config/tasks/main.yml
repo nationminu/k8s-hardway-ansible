@@ -1,5 +1,9 @@
 ---
-# tasks file for prerequisites/pre-config  
+# tasks file for prerequisites/pre-config   
+- name: Set Hostname 
+  hostname:
+    name: "{{ hostvars[host]['inventory_hostname']}}"
+    
 - name: Add Hostname to /etc/hosts 
   copy:
     dest: "/etc/hosts" 
