@@ -7,10 +7,7 @@
     "ipMasq": true,
     "ipam": {
         "type": "host-local",
-        "ranges": [ 
-        {% for host in groups['kube-node'] %}{% if inventory_hostname == host %}[{"subnet": "{{ POD_CIDR_PREFIX }}.{{ loop.index }}.0/24"}]
-        {% endif %}{% endfor %}
-        ],
+        "ranges": [{% for host in groups['kube-node'] %}{% if inventory_hostname == host %}[{"subnet": "{{ POD_CIDR_PREFIX }}.{{ loop.index }}.0/24"}]{% endif %}{% endfor %}],
         "routes": [{"dst": "0.0.0.0/0"}]
     }
 }
