@@ -1,8 +1,8 @@
 ## ssh config for k8s cluster
 
-{% for host in groups['all'] | sort %}
+{% for host in groups['all'] | sort %}{% set hostname = hostvars[host]['inventory_hostname'].split('.') %}
 ## {{ loop.index }} {{ hostvars[host]['inventory_hostname'] }}
-Host {{ hostvars[host]['inventory_hostname'] }} {{ hostvars[host]['inventory_hostname'] }}.{{ KUBERNETES_FQDN }}
+Host {{ hostname[0] }} {{ hostvars[host]['inventory_hostname'] }}
   HostName {{ hostvars[host]['ansible_host'] }}
   User {{ ansible_user }}
   {% if ansible_user == 'root' %}
@@ -12,5 +12,5 @@ Host {{ hostvars[host]['inventory_hostname'] }} {{ hostvars[host]['inventory_hos
   {% endif %}
   StrictHostKeyChecking no
   UserKnownHostsFile=/dev/null
-{% endfor %}
+{% endfor %} 
 

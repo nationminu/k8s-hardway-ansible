@@ -45,7 +45,7 @@ frontend  k8s-apiserver
     default_backend k8s-master
   
 # api
-backend k8s-apiserver
+backend k8s-master
     balance source
     mode tcp 
 {% if groups['kube-master'] | length > 1 %}
