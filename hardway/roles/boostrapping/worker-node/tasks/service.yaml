@@ -82,20 +82,5 @@
     - kubelet 
     - kube-proxy
 
-- name: Create the bridge network configuration file
-  copy:
-    dest: "/etc/cni/net.d/10-bridge.conf"
-    content: |
-      {
-          "cniVersion": "0.3.1",
-          "name": "bridge",
-          "type": "bridge",
-          "bridge": "cnio0",
-          "isGateway": true,
-          "ipMasq": true,
-          "ipam": {
-              "type": "host-local",
-              "ranges": [{% for host in groups['kube-node'] %}{% if inventory_hostname == host %}[{"subnet": "{{ POD_CIDR_PREFIX }}.{{ loop.index }}.0/24"}]{% endif %}{% endfor %}],
-              "routes": [{"dst": "0.0.0.0/0"}]
-          }
-      }    
+- name: Touch the bridge network configuration file
+  shell: "echo '' >> /etc/cni/net.d/10-bridge.conf" 
